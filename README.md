@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Career Guidance Platform - Prototype
 
 Prerequisites
@@ -19,3 +20,6 @@ Frontend (static)
 Notes
 - SQLite database file is `app/data.db`. To reset, delete it and restart.
 
+=======
+# SIH-Hackathon
+>>>>>>> 97495ad5193d67fdc3d35ed41b6ca3dbdef0de5a
