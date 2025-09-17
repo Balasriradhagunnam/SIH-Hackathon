@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Career Guidance</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel-2: #0f1530;
+      --text: #e6e8ef;
+      --muted: #a5acc7;
+      --brand: #6aa6ff;
+      --brand-2: #7ef0ff;
+      --card: #121933;
+      --border: #1f2b57;
+      --shadow: 0 10px 25px rgba(7, 14, 40, .5);
+      --ok: #49d49d;
+      --warn: #ffd166;
+      --danger: #ff6b6b;
+    }
+    [data-theme="light"] {
+      --bg: #f7f8fc;
+      --panel: #ffffff;
+      --panel-2: #f1f3f9;
+      --text: #0b1020;
+      --muted: #4b587c;
+      --brand: #3b82f6;
+      --brand-2: #06b6d4;
+      --card: #ffffff;
+      --border: #e5e9f5;
+      --shadow: 0 8px 20px rgba(16, 24, 64, .08);
+      --ok: #16a34a;
+      --warn: #ca8a04;
+      --danger: #dc2626;
+    }
+    html, body { height: 100%; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+    .container { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    .nav { position: sticky; top: 0; backdrop-filter: saturate(180%) blur(8px); background: color-mix(in oklab, var(--bg) 85%, transparent); border-bottom: 1px solid var(--border); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1120px; margin: 0 auto; padding: 12px 24px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .2px; }
+    .logo { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: var(--shadow); display: grid; place-items: center; color: white; font-size: 18px; }
+    .actions { display: flex; gap: 10px; align-items: center; }
+    .btn { background: var(--brand); color: white; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer; box-shadow: var(--shadow); transition: transform .08s ease, opacity .2s ease; }
+    .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+    .btn:hover { transform: translateY(-1px); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .section { margin-top: 28px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+    .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    input, select { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); outline: none; }
+    label { font-size: 14px; color: var(--muted); }
+    h1 { font-size: 28px; margin: 16px 0 8px; }
+    h2 { font-size: 20px; margin: 0 0 12px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; }
+    .chip { display: inline-block; font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); }
+    .muted { color: var(--muted); font-size: 13px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .skeleton { background: linear-gradient(90deg, color-mix(in oklab, var(--panel) 85%, transparent), color-mix(in oklab, var(--panel-2) 70%, transparent), color-mix(in oklab, var(--panel) 85%, transparent)); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 12px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .footer { margin: 48px 0 24px; text-align: center; color: var(--muted); font-size: 13px; }
+    .toggle { width: 42px; height: 26px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border); position: relative; cursor: pointer; }
+    .toggle span { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 999px; background: var(--brand); transition: left .2s ease; }
+    [data-theme="light"] .toggle span { left: 18px; }
+    .empty { text-align: center; padding: 24px; color: var(--muted); border: 1px dashed var(--border); border-radius: 12px; }
+  </style>
+  <script>
+    const API = 'http://localhost:8000';
+    const $ = (id) => document.getElementById(id);
+    function setTheme(theme){ document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); }
+    function toggleTheme(){ const t = document.documentElement.getAttribute('data-theme'); setTheme(t === 'light' ? 'dark' : 'light'); }
+    function loadTheme(){ const t = localStorage.getItem('theme') || 'light'; setTheme(t); }
+
+    async function fetchColleges(){
+      const list = $('colleges');
+      list.innerHTML = '';
+      for(let i=0;i<3;i++){ const skel = document.createElement('div'); skel.className='card skeleton'; skel.style.height='96px'; list.appendChild(skel); }
+      const state = $('state').value.trim();
+      const hasHostel = $('hostel').checked;
+      const url = new URL(API + '/colleges');
+      if(state) url.searchParams.set('state', state);
+      if(hasHostel) url.searchParams.set('has_hostel','true');
+      const res = await fetch(url);
+      const data = await res.json();
+      list.innerHTML = '';
+      if(!data.length){ list.innerHTML = `<div class="empty">No colleges found. Try another filter.</div>`; return; }
+      data.forEach(c => {
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML = `
+          <div class="row" style="justify-content: space-between;">
+            <div style="font-weight:700">${c.name}</div>
+            <span class="chip">${c.type.toUpperCase()}</span>
+          </div>
+          <div class="muted">${c.district}, ${c.state}</div>
+          <div class="row">
+            <span class="chip">Medium: ${c.medium}</span>
+            <span class="chip" style="border-color:${c.has_hostel?'var(--ok)':'var(--border)'}">Hostel: ${c.has_hostel ? 'Yes' : 'No'}</span>
+          </div>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    async function fetchScholarships(){
+      const list = $('scholarships');
+      list.innerHTML = '';
+      for(let i=0;i<3;i++){ const skel = document.createElement('div'); skel.className='card skeleton'; skel.style.height='80px'; list.appendChild(skel); }
+      const state = $('sch_state').value.trim() || 'KA';
+      const res = await fetch(API + '/scholarships/match', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_state: state, level: 'UG' }) });
+      const data = await res.json();
+      list.innerHTML = '';
+      if(!data.matches.length){ list.innerHTML = `<div class="empty">No scholarships matched right now.</div>`; return; }
+      data.matches.forEach(m => {
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML = `
+          <div class="row" style="justify-content: space-between;">
+            <div style="font-weight:700">Scholarship #${m.scholarship_id}</div>
+            <span class="chip" style="border-color:var(--brand)">Score: ${m.score}</span>
+          </div>
+          <div class="muted">${m.why.join(', ')}</div>
+        `;
+        list.appendChild(el);
+      });
+    }
+
+    function renderFlow(data){
+      const wrap = $('simulateFlow');
+      wrap.innerHTML = '';
+      const nodes = data.pathNodes || [];
+      const transitions = data.transitions || [];
+      if(!nodes.length){ wrap.innerHTML = '<div class="empty">No path available.</div>'; return; }
+
+      // Build simple linear order by following first transition chain
+      const order = [];
+      const fromTo = new Map(transitions.map(([a,b]) => [a,b]));
+      let i = 0; const seen = new Set();
+      while(i !== undefined && i !== null && !seen.has(i) && i < nodes.length){
+        order.push(i); seen.add(i); i = fromTo.get(i);
+      }
+      if(order.length === 0){ order.push(...nodes.map((_,idx)=>idx)); }
+
+      const flow = document.createElement('div');
+      flow.className = 'flow';
+      order.forEach((idx, p) => {
+        const n = nodes[idx];
+        const card = document.createElement('div');
+        card.className = 'node card';
+        card.innerHTML = `
+          <div class="muted" style="font-size:12px;">${(n.node_type||'step').toUpperCase()}</div>
+          <div style="font-weight:700">${n.label}</div>
+          ${n.median_salary ? `<div class="chip">Median: ₹${(n.median_salary).toLocaleString('en-IN')}</div>` : ''}
+        `;
+        flow.appendChild(card);
+        if(p < order.length - 1){
+          const arrow = document.createElement('div');
+          arrow.className = 'arrow';
+          arrow.innerHTML = '➜';
+          flow.appendChild(arrow);
+        }
+      });
+      wrap.appendChild(flow);
+
+      const scenario = (data.scenarios && data.scenarios[0]) || null;
+      if(scenario){
+        const note = document.createElement('div');
+        note.className = 'muted';
+        note.style.marginTop = '8px';
+        note.textContent = `Example outcome: ${scenario.outcomes} (p=${scenario.probabilities})`;
+        wrap.appendChild(note);
+      }
+    }
+
+    async function simulatePath(){
+      $('simulateFlow').innerHTML = '<div class="skeleton" style="height:72px"></div>';
+      const res = await fetch(API + '/career-paths/simulate', { method: 'POST' });
+      const data = await res.json();
+      renderFlow(data);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadTheme();
+      $('themeToggle').addEventListener('click', toggleTheme);
+      fetchColleges();
+      fetchScholarships();
+      simulatePath();
+    });
+  </script>
+  </head>
+<body>
+  <div class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <div class="logo">CG</div>
+        <div>Career Guidance</div>
+      </div>
+      <div class="actions">
+        <div class="toggle" id="themeToggle"><span></span></div>
+        <button class="btn secondary" onclick="location.reload()">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>Find Your Best-Fit Path</h1>
+    <div class="panel section">
+      <div class="filters">
+        <label>State<br/><input id="state" placeholder="KA" /></label>
+        <label>Hostel<br/><input type="checkbox" id="hostel" /></label>
+        <div style="align-self:flex-end">
+          <button class="btn" onclick="fetchColleges()">Search Colleges</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Colleges</h2>
+      <div class="grid" id="colleges"></div>
+    </div>
+
+    <div class="panel section">
+      <div class="filters">
+        <label>Student State<br/><input id="sch_state" placeholder="KA" /></label>
+        <div style="align-self:flex-end">
+          <button class="btn" onclick="fetchScholarships()">Match Scholarships</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Scholarship Matches</h2>
+      <div class="grid" id="scholarships"></div>
+    </div>
+
+    <div class="section">
+      <h2>Career Path Simulation</h2>
+      <div id="simulateFlow" class="panel"></div>
+    </div>
+
+    <div class="footer">Made for students • Toggle light/dark in the header</div>
+  </div>
+</body>
+</html>
